@@ -28,7 +28,7 @@ Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
     // working area----------------------------------------
     if (stack_length == 0) printf (VIOLET_START "WARNING: you want to create 0-size stack!!!" COLOR_STOP);
 
-    stack_i -> size = 0;
+    stack_i -> size = 1;
     stack_i -> capacity = stack_length;
 
     IF_ON_DEBAG(
@@ -38,9 +38,13 @@ Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
         stack_i -> line = line;
     )
 
-    stack_i -> data = (TYPE_OF_STACK_ELEM*)calloc (stack_length, sizeof (TYPE_OF_STACK_ELEM));
+    stack_i -> data = (TYPE_OF_STACK_ELEM*)calloc (CANARIES * stack_length, sizeof (TYPE_OF_STACK_ELEM));
 
-    for (int i = 0; i < stack_i -> capacity; i++)
+    stack_i -> data [0] = CANARY_ONE;
+
+    stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
+
+    for (int i = 1; i < stack_i -> capacity - 1; i++)
     {
         stack_i -> data [i] = 0xDED;
     }
@@ -69,7 +73,7 @@ Error_Codes stack_push (struct Stack* stack_i, TYPE_OF_STACK_ELEM var)
     assert (!error);
 
 
-    if (stack_i -> size == stack_i -> capacity)
+    if (stack_i -> size + 1 == stack_i -> capacity)
     {
         stack_real_up_capacity (stack_i);
     }
@@ -104,6 +108,10 @@ Error_Codes stack_pop (struct Stack* stack_i, TYPE_OF_STACK_ELEM* pop_elem)
 
     assert (!error);
 
+     if (stack_i -> size + 1 == (stack_i -> capacity / 4))
+    {
+        stack_real_down_capacity (stack_i);
+    }
 
     *pop_elem = stack_i -> data [stack_i -> size - CORRECTION_SIZE_FOR_DATA_INDEX];
     stack_i -> size -- ;
@@ -126,7 +134,10 @@ void decode_the_error_code_enum (Error_Codes* error_returned)
         case NO_ERROR : printf (GREEN_START "NO ERROR: %d" COLOR_STOP, *error_returned);
         break;
 
-        case NULL_POINTER_STACK_I : printf (RED_START "struct Stack* stack_i == 0, error code : %d" COLOR_STOP, *error_returned);
+        case NULL_POINTER_STACK_I : printf (RED_START "struct Stack* stack_i == NULL, error code : %d" COLOR_STOP, *error_returned);
+        break;
+
+        case NULL_POINTER_DATA : printf (RED_START "stack_i -> data == NULL, error code : %d" COLOR_STOP, *error_returned);
         break;
 
         case CAPACITY_SMALLER_THAN_ZERO : printf (RED_START "capacity < 0 (null), error code : %d" COLOR_STOP, *error_returned);
@@ -136,6 +147,12 @@ void decode_the_error_code_enum (Error_Codes* error_returned)
         break;
 
         case CAPACITY_SMALLER_THAN_SIZE : printf (RED_START "capacity < size, error code : %d" COLOR_STOP, *error_returned);
+        break;
+
+        case CANARY_ONE_WAS_DEAD : printf (RED_START "CANARY_ONE WAS DEAD (stack_i.data[0] attacked), error code : %d" COLOR_STOP, *error_returned);
+        break;
+
+        case CANARY_TWO_WAS_DEAD : printf (RED_START "CANARY_TWO WAS DEAD (stack_i.data[stack.capacity - 1] attacked), error code : %d" COLOR_STOP, *error_returned);
         break;
 
         default : printf (VIOLET_START "ERROR CODE: %d" COLOR_STOP, *error_returned);
@@ -185,6 +202,13 @@ Error_Codes stack_verifier (struct Stack* stack_i)
         return error;
     }
 
+    if (stack_i -> data == NULL)
+    {
+        error = NULL_POINTER_DATA;
+        stack_dump (stack_i);
+        return error;
+    }
+
     if ((stack_i -> capacity) < 0)
     {
         error = CAPACITY_SMALLER_THAN_ZERO;
@@ -206,38 +230,71 @@ Error_Codes stack_verifier (struct Stack* stack_i)
         return error;
     }
 
+    if (stack_i -> data [0] != CANARY_ONE)
+    {
+        error = CANARY_ONE_WAS_DEAD;
+        stack_dump (stack_i);
+        return error;
+    }
+
+    if (stack_i -> data [stack_i -> capacity - 1] != CANARY_TWO)
+    {
+        error = CANARY_TWO_WAS_DEAD;
+        stack_dump (stack_i);
+        return error;
+    }
+
     return error;
     // ----------------------------------------------------
 }
 
 void stack_dump (struct Stack* stack_i)
 {
+    // variable--------------------------------------------
+    FILE* error_in_stack_i = NULL;
+    // ----------------------------------------------------
+
     // working area----------------------------------------
+
+    if ((error_in_stack_i = fopen (ERROR_STACK_FILE, OPEN_FILE_FOR_WRITING)) == NULL)
+    {
+        printf ("You have errors with stack, but " ERROR_STACK_FILE " didn't open. Sorry...");
+        error_in_stack_i = stderr;
+    }
+
     if (stack_i == NULL)
     {
-        printf ("struct Stack \"%s\" [%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
-                                                                                stack_i -> func, stack_i -> file,
-                                                                                stack_i -> line);
+        fprintf (error_in_stack_i, "SORRY, BUT Stack* stack_i == NULL");
     } else
     {
-        printf ("struct Stack \"%s\" [%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
-                                                                                    stack_i -> func, stack_i -> file,
-                                                                                    stack_i -> line);
-        printf ("\tcapacity = %d\n", stack_i -> capacity);
-        printf ("\tsize = %d\n", stack_i -> size);
-        printf ("\tdata [%p]\n\t{\n", stack_i -> data);
+        fprintf (error_in_stack_i, "\n\nstruct Stack \"%s\" [%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
+                                                                                                                                      stack_i -> func, stack_i -> file,
+                                                                                                                                      stack_i -> line);
+        fprintf (error_in_stack_i, "\tcapacity = %d\n", stack_i -> capacity);
+        fprintf (error_in_stack_i, "\tsize = %d\n", stack_i -> size);
+        fprintf (error_in_stack_i, "\tdata [%p]\n\t{\n", stack_i -> data);
 
-        for (int i = 0; i < stack_i -> capacity; i ++)
+        if (stack_i -> size > 0 && stack_i -> capacity > 0 && stack_i -> size <= stack_i -> capacity && stack_i -> data != NULL)
         {
-            if (fabs(stack_i -> data [i] - 0xDED) < 0.0001)
-                printf ("\t\t[%d] = " SPECIFICATOR_TYPE " (MAYBE POIZEN)\n", i, stack_i -> data [i]);
-            else
-                printf ("\t\t*[%d] = " SPECIFICATOR_TYPE "\n", i, stack_i -> data [i]);
+            fprintf (error_in_stack_i, "\t\tCANARY_ONE: data[0] = " SPECIFICATOR_TYPE " \n", stack_i -> data [0]);
+
+            int cnt_print_dump = 1;
+
+            for (; cnt_print_dump < stack_i -> capacity - 1; cnt_print_dump  ++)
+            {
+                if (fabs(stack_i -> data [cnt_print_dump ] - 0xDED) < 0.0001)
+                    fprintf (error_in_stack_i, "\t\t[%d] = " SPECIFICATOR_TYPE " (MAYBE POIZEN)\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+                else
+                    fprintf (error_in_stack_i, "\t\t*[%d] = " SPECIFICATOR_TYPE "\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+            }
+
+            fprintf (error_in_stack_i, "\t\tCANARY_ONE: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
         }
+        fprintf (error_in_stack_i, "\t}\n");
 
-        printf ("\t}\n");
+        fprintf (error_in_stack_i, "}\n");
 
-        printf ("}\n");
+        if (fclose(error_in_stack_i)) printf ("ERROR WITH CLOSING ERROR_FILE");
     }
     // ----------------------------------------------------
 }
@@ -257,14 +314,93 @@ void stack_real_up_capacity (struct Stack* stack_i)
         assert (!error);
     )
 
-    stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, 2*(stack_i -> capacity));
+    stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, 2*(stack_i -> capacity * sizeof (TYPE_OF_STACK_ELEM)));
     stack_i -> capacity = 2*(stack_i -> capacity);
+
+    stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
+
+    IF_ON_DEBAG(
+        error = stack_verifier (stack_i);
+        assert (!error);
+    )
+    // ---------------------------------------------------
+}
+
+void stack_real_down_capacity (struct Stack* stack_i)
+{
+    // variables and etc.----------------------------------
+    Error_Codes error = NO_ERROR;
+    // ----------------------------------------------------
+
+
+    // working area----------------------------------------
+    IF_ON_DEBAG(
+        error = stack_verifier (stack_i);
+        assert (!error);
+    )
+
+    stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, (stack_i -> capacity/4 * sizeof (TYPE_OF_STACK_ELEM)));
+    stack_i -> capacity = (stack_i -> capacity) / 4;
+    stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
 
     IF_ON_DEBAG(
         error = stack_verifier (stack_i);
         assert (!error);
     )
 
+    // ----------------------------------------------------
+}
+
+void stack_printf (struct Stack* stack_i)
+{
+    // variables and etc.----------------------------------
+    Error_Codes error = NO_ERROR;
+    // ----------------------------------------------------
+
+    // working area----------------------------------------
+    IF_ON_DEBAG(
+        error = stack_verifier (stack_i);
+        assert (!error);
+    )
+
+    // variable--------------------------------------------
+    FILE* stack_printed = NULL;
+    // ----------------------------------------------------
+
+    // working area----------------------------------------
+
+    if ((stack_printed = fopen (STACK_PRINTED, OPEN_FILE_FOR_WRITING)) == NULL)
+    {
+        printf ("You have errors with stack, but " ERROR_STACK_FILE " didn't open. Sorry...");
+        stack_printed = stdout;
+    }
+
+    fprintf (stack_printed, "\n\nstruct Stack \"%s\" [%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
+                                                                                                                                      stack_i -> func, stack_i -> file,
+                                                                                                                                      stack_i -> line);
+    fprintf (stack_printed, "\tcapacity = %d\n", stack_i -> capacity);
+    fprintf (stack_printed, "\tsize = %d\n", stack_i -> size);
+    fprintf (stack_printed, "\tdata [%p]\n\t{\n", stack_i -> data);
+
+    fprintf (stack_printed, "\t\tCANARY_ONE: data[0] = " SPECIFICATOR_TYPE " \n", stack_i -> data [0]);
+
+    int cnt_print_dump = 1;
+
+    for (; cnt_print_dump < stack_i -> capacity - 1; cnt_print_dump  ++)
+        {
+            if (fabs(stack_i -> data [cnt_print_dump ] - 0xDED) < 0.0001)
+                fprintf (stack_printed, "\t\t[%d] = " SPECIFICATOR_TYPE " (MAYBE POIZEN)\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+            else
+                fprintf (stack_printed, "\t\t*[%d] = " SPECIFICATOR_TYPE "\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+        }
+
+    fprintf (stack_printed, "\t\tCANARY_ONE: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
+
+    fprintf (stack_printed, "\t}\n");
+
+    fprintf (stack_printed, "}\n");
+
+    if (fclose(stack_printed)) printf ("ERROR WITH CLOSING ERROR_FILE");
     // ----------------------------------------------------
 }
 // -------------------------------------------------------

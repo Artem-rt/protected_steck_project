@@ -19,17 +19,23 @@
 #define RED_START "\e[31m"
 #define GREEN_START "\e[32m"
 #define COLOR_STOP "\e[0m"
-// #define STACK_INIT(point_stack_one, stack_length) stack_init (point_stack_one, stack_length IF_ON_DEBAG(,  \
-//                                                                                ????? "stack_one",               \
-//                                                                                 ??????"main()",                  \
-//                                                                                 __FILE__,                  \
-//                                                                                 __LINE__)    )?????????
+#define ERROR_STACK_FILE "ERROR_IN_STACK_I.log"
+#define STACK_PRINTED "STACK_PRINTED.txt"
+#define OPEN_FILE_FOR_WRITING "w"
+#define CANARIES 2
+
+
 #define CORRECTION_SIZE_FOR_DATA_INDEX 1
 // ---------------------------------------------------
 
 // determining the data type in the stack-------------
-typedef double TYPE_OF_STACK_ELEM;
-#define SPECIFICATOR_TYPE "%lf"
+typedef int TYPE_OF_STACK_ELEM;
+#define SPECIFICATOR_TYPE "%d"
+// ---------------------------------------------------
+
+// canary const---------------------------------------
+const TYPE_OF_STACK_ELEM CANARY_ONE = 0xDEADC0DE;
+const TYPE_OF_STACK_ELEM CANARY_TWO = 0xDEADBABE;
 // ---------------------------------------------------
 
 // structure == our stack-----------------------------
@@ -56,9 +62,12 @@ enum Error_Codes
 {
     NO_ERROR = 0,
     NULL_POINTER_STACK_I = -1,
-    CAPACITY_SMALLER_THAN_ZERO = -2,
-    SIZE_SMALLER_THAN_ZERO = -3,
-    CAPACITY_SMALLER_THAN_SIZE = -4
+    NULL_POINTER_DATA = -2,
+    CAPACITY_SMALLER_THAN_ZERO = -3,
+    SIZE_SMALLER_THAN_ZERO = -4,
+    CAPACITY_SMALLER_THAN_SIZE = -5,
+    CANARY_ONE_WAS_DEAD = -6,
+    CANARY_TWO_WAS_DEAD = -7
 } ;
 // ---------------------------------------------------
 
@@ -78,7 +87,105 @@ IF_ON_DEBAG(
 Error_Codes stack_verifier (struct Stack* stack_i);
 void stack_dump (struct Stack* stack_i);
 )
+
+
+void stack_printf (struct Stack* stack_i);
 void stack_real_up_capacity (struct Stack* stack_i);
+void stack_real_down_capacity (struct Stack* stack_i);
 // ---------------------------------------------------
 
 #endif  // #ifndef STACK_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// generic.h
