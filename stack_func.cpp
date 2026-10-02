@@ -26,10 +26,14 @@ Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
 
 
     // working area----------------------------------------
-    if (stack_length == 0) printf (VIOLET_START "WARNING: you want to create 0-size stack!!!" COLOR_STOP);
+    if (stack_length == 0) printf (VIOLET_START "WARNING: you created 0-size stack!!!\n" COLOR_STOP);
 
-    stack_i -> size = 1;
+
     stack_i -> capacity = stack_length;
+    if (stack_i -> capacity == 0)
+        stack_i -> size = -1;
+    else
+        stack_i -> size = 1;
 
     IF_ON_DEBAG(
         stack_i -> name = name;
@@ -38,16 +42,19 @@ Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
         stack_i -> line = line;
     )
 
-    stack_i -> data = (TYPE_OF_STACK_ELEM*)calloc (CANARIES * stack_length, sizeof (TYPE_OF_STACK_ELEM));
+    stack_i -> data = (TYPE_OF_STACK_ELEM*)calloc (CANARIES + stack_length, sizeof (TYPE_OF_STACK_ELEM));
 
     stack_i -> data [0] = CANARY_ONE;
-
-    stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
+    if (stack_i -> capacity == 0)
+        stack_i -> data [1] = CANARY_TWO;
+    else
+        stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
 
     for (int i = 1; i < stack_i -> capacity - 1; i++)
     {
         stack_i -> data [i] = 0xDED;
     }
+    stack_printf (stack_i);
     IF_ON_DEBAG(
         error = stack_verifier (stack_i);
     )
@@ -73,7 +80,7 @@ Error_Codes stack_push (struct Stack* stack_i, TYPE_OF_STACK_ELEM var)
     assert (!error);
 
 
-    if (stack_i -> size + 1 == stack_i -> capacity)
+    if ( (stack_i -> size) + 1 == (stack_i -> capacity) || (stack_i -> capacity) == 0 )
     {
         stack_real_up_capacity (stack_i);
     }
@@ -105,6 +112,12 @@ Error_Codes stack_pop (struct Stack* stack_i, TYPE_OF_STACK_ELEM* pop_elem)
     IF_ON_DEBAG(
         error = stack_verifier (stack_i);
     )
+
+    if (stack_i -> capacity == 0)
+    {
+        error = CAPACITY_ZERO_IN_STACK_POP;
+        stack_dump (stack_i);
+    }
 
     assert (!error);
 
@@ -153,6 +166,9 @@ void decode_the_error_code_enum (Error_Codes* error_returned)
         break;
 
         case CANARY_TWO_WAS_DEAD : printf (RED_START "CANARY_TWO WAS DEAD (stack_i.data[stack.capacity - 1] attacked), error code : %d" COLOR_STOP, *error_returned);
+        break;
+
+        case CAPACITY_ZERO_IN_STACK_POP : printf (RED_START "capacity == 0 (null), error code : %d" COLOR_STOP, *error_returned);
         break;
 
         default : printf (VIOLET_START "ERROR CODE: %d" COLOR_STOP, *error_returned);
@@ -216,7 +232,7 @@ Error_Codes stack_verifier (struct Stack* stack_i)
         return error;
     }
 
-    if ((stack_i -> size) < 0)
+    if ((stack_i -> size) < 0 && (stack_i -> capacity) != 0)
     {
         error = SIZE_SMALLER_THAN_ZERO;
         stack_dump (stack_i);
@@ -237,7 +253,7 @@ Error_Codes stack_verifier (struct Stack* stack_i)
         return error;
     }
 
-    if (stack_i -> data [stack_i -> capacity - 1] != CANARY_TWO)
+    if (stack_i -> data [stack_i -> capacity - 1] != CANARY_TWO && stack_i -> capacity != 0)
     {
         error = CANARY_TWO_WAS_DEAD;
         stack_dump (stack_i);
@@ -270,6 +286,11 @@ void stack_dump (struct Stack* stack_i)
         fprintf (error_in_stack_i, "\n\nstruct Stack \"%s\" [%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
                                                                                                                                       stack_i -> func, stack_i -> file,
                                                                                                                                       stack_i -> line);
+
+        if (stack_i -> capacity == 0)
+        {
+            fprintf (error_in_stack_i, "\n\nMAYBE PROBLEM IN stack_i.capacity == 0 in stack_pop(--//--)\n\n");
+        }
         fprintf (error_in_stack_i, "\tcapacity = %d\n", stack_i -> capacity);
         fprintf (error_in_stack_i, "\tsize = %d\n", stack_i -> size);
         fprintf (error_in_stack_i, "\tdata [%p]\n\t{\n", stack_i -> data);
@@ -314,8 +335,17 @@ void stack_real_up_capacity (struct Stack* stack_i)
         assert (!error);
     )
 
-    stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, 2*(stack_i -> capacity * sizeof (TYPE_OF_STACK_ELEM)));
-    stack_i -> capacity = 2*(stack_i -> capacity);
+    if (stack_i -> capacity == 0)
+    {
+        stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, (size_t)((5 + CANARIES)* sizeof (TYPE_OF_STACK_ELEM)));
+        stack_i -> capacity = 5;
+        stack_i -> size = 1;
+
+    } else
+    {
+        stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, 2*(stack_i -> capacity * sizeof (TYPE_OF_STACK_ELEM)));
+        stack_i -> capacity = 2*(stack_i -> capacity);
+    }
 
     stack_i -> data [stack_i -> capacity - 1] = CANARY_TWO;
 
@@ -338,6 +368,14 @@ void stack_real_down_capacity (struct Stack* stack_i)
         error = stack_verifier (stack_i);
         assert (!error);
     )
+
+    if (stack_i -> capacity == 0)
+    {
+        error = CAPACITY_ZERO_IN_STACK_POP;
+        stack_dump (stack_i);
+    }
+
+    assert (!error);
 
     stack_i -> data = (TYPE_OF_STACK_ELEM*)realloc (stack_i -> data, (stack_i -> capacity/4 * sizeof (TYPE_OF_STACK_ELEM)));
     stack_i -> capacity = (stack_i -> capacity) / 4;
@@ -394,7 +432,7 @@ void stack_printf (struct Stack* stack_i)
                 fprintf (stack_printed, "\t\t*[%d] = " SPECIFICATOR_TYPE "\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
         }
 
-    fprintf (stack_printed, "\t\tCANARY_ONE: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
+    fprintf (stack_printed, "\t\tCANARY_TWO: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
 
     fprintf (stack_printed, "\t}\n");
 

@@ -29,8 +29,8 @@
 // ---------------------------------------------------
 
 // determining the data type in the stack-------------
-typedef int TYPE_OF_STACK_ELEM;
-#define SPECIFICATOR_TYPE "%d"
+typedef double TYPE_OF_STACK_ELEM;
+#define SPECIFICATOR_TYPE "%lf"
 // ---------------------------------------------------
 
 // canary const---------------------------------------
@@ -67,7 +67,8 @@ enum Error_Codes
     SIZE_SMALLER_THAN_ZERO = -4,
     CAPACITY_SMALLER_THAN_SIZE = -5,
     CANARY_ONE_WAS_DEAD = -6,
-    CANARY_TWO_WAS_DEAD = -7
+    CANARY_TWO_WAS_DEAD = -7,
+    CAPACITY_ZERO_IN_STACK_POP = -8
 } ;
 // ---------------------------------------------------
 

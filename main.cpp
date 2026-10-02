@@ -38,20 +38,11 @@ int main ()
 
     }
 
-
     for (int i = 0; i < 13; i++)
     {
         if ((error_returned = stack_pop (&stack_one, &pop_elem)) != NO_ERROR)
         decode_the_error_code_enum (&error_returned);
     }
-
-    // stack_one.capacity = -10; // for checking protection
-
-//     if ((error_returned = stack_push (&stack_one, var_two)) != NO_ERROR)
-//         decode_the_error_code_enum (&error_returned);
-//
-//     if ((error_returned = stack_pop (&stack_one, &pop_elem)) != NO_ERROR)
-//         decode_the_error_code_enum (&error_returned);
 
     printf ("pop_elem = " SPECIFICATOR_TYPE "  capacity = %d  size = %d", pop_elem, stack_one.capacity, stack_one.size);
 

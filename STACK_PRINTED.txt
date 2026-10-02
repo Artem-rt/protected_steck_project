@@ -1,0 +1,16 @@
+
+
+struct Stack "stack_one" [0000000E6DFFFC00] created by "main()" at "main.cpp" : 31
+
+{
+	capacity = 5
+	size = 3
+	data [0000018C971293A0]
+	{
+		CANARY_ONE: data[0] = 3735929054.000000 
+		*[1] = 0.000000
+		*[2] = 1.000000
+		*[3] = 2.000000
+		CANARY_TWO: data[4] = 3735927486.000000 
+	}
+}
