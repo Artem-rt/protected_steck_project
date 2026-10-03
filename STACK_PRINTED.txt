@@ -1,11 +1,11 @@
 
 
-struct Stack "stack_one" [0000000E6DFFFC00] created by "main()" at "main.cpp" : 31
+struct Stack "stack_one" [0x000000CD62BFF940] created by "main()" at "main.cpp" : 31
 
 {
 	capacity = 5
 	size = 3
-	data [0000018C971293A0]
+	data [0x0000020F0B8EBB30]
 	{
 		CANARY_ONE: data[0] = 3735929054.000000 
 		*[1] = 0.000000

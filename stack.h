@@ -1,17 +1,31 @@
-// stack.h - work safely whith stack!-----------------
+// stack.h - work safely with stack!-----------------
 
 // include guards-------------------------------------
 #ifndef STACK_H
 #define STACK_H
 // ---------------------------------------------------
 
+#include <stdio.h> // for init. FILE*
+
 // important define for create debag-mode-------------
-#ifdef DEBAG_OFF
+#ifdef VERIFICATION_OFF
 #define NDEBAG
 #define IF_ON_DEBAG(...)
 #else
 #define IF_ON_DEBAG(...) __VA_ARGS__
-#endif                                                 // #ifdef DEBAG_OFF
+#endif
+
+#ifdef CANARY_OFF
+#define IF_ON_CANARY(...)
+#else
+#define IF_ON_CANARY(...) __VA_ARGS__
+#endif
+
+#ifdef HESH_OFF
+#define IF_ON_HESH(...)
+#else
+#define IF_ON_HESH(...) __VA_ARGS__
+#endif
 // ---------------------------------------------------
 
 // useful macro---------------------------------------
@@ -23,9 +37,13 @@
 #define STACK_PRINTED "STACK_PRINTED.txt"
 #define OPEN_FILE_FOR_WRITING "w"
 #define CANARIES 2
-
-
 #define CORRECTION_SIZE_FOR_DATA_INDEX 1
+#define STACK_INIT(_stack_, _len_) stack_init (_stack_, _len_ IF_ON_DEBAG(, \
+                                                                                #_stack_,\
+                                                                                "",\
+                                                                                __FILE__,\
+                                                                                __LINE__) )
+#define STACK_DUMP_FILE(_stack_, _error_, _file_)
 // ---------------------------------------------------
 
 // determining the data type in the stack-------------
@@ -49,9 +67,7 @@ struct Stack
     ) ;
 
     TYPE_OF_STACK_ELEM* data;
-
     int size;
-
     int capacity;
 
 } ;
@@ -80,19 +96,20 @@ Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
                                                                                 int line)        );
 Error_Codes stack_push (struct Stack* stack_i, TYPE_OF_STACK_ELEM var);
 Error_Codes stack_pop (struct Stack* stack_i, TYPE_OF_STACK_ELEM* pop_elem);
-void decode_the_error_code_enum (Error_Codes* error_returned);
+void decode_the_error_code_enum (Error_Codes* error_returned, FILE* error_in_stack_i);
 void stack_destroy (struct Stack* stack_i);
 
 
 IF_ON_DEBAG(
 Error_Codes stack_verifier (struct Stack* stack_i);
-void stack_dump (struct Stack* stack_i);
+void stack_dump (struct Stack* stack_i, Error_Codes* error);
 )
 
 
-void stack_printf (struct Stack* stack_i);
+
 void stack_real_up_capacity (struct Stack* stack_i);
 void stack_real_down_capacity (struct Stack* stack_i);
+// void stack_printf (struct Stack* stack_i);
 // ---------------------------------------------------
 
 #endif  // #ifndef STACK_H

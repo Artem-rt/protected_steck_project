@@ -1,15 +1,31 @@
 
 
-struct Stack "stack_one" [000000BF093FFA30] created by "main()" at "main.cpp" : 31
+struct Stack "&stack_one" [0x0000009452DFFBC0] created by "" at "main.cpp" : 28
 
 {
-
-
-MAYBE PROBLEM IN stack_i.capacity == 0 in stack_pop(--//--)
-
-	capacity = 0
+	capacity = 20
 	size = 16
-	data [0000026BB36493A0]
+	data [0x0000026DE215BB30]
 	{
+		CANARY_ONE: data[0] = -1.000000 
+		*[1] = 0.000000
+		*[2] = 1.000000
+		*[3] = 2.000000
+		*[4] = 3.000000
+		*[5] = 4.000000
+		*[6] = 5.000000
+		*[7] = 6.000000
+		*[8] = 7.000000
+		*[9] = 8.000000
+		*[10] = 9.000000
+		*[11] = 10.000000
+		*[12] = 11.000000
+		*[13] = 12.000000
+		*[14] = 13.000000
+		*[15] = 14.000000
+		*[16] = 0.000000
+		*[17] = 0.000000
+		*[18] = 0.000000
+		CANARY_ONE: data[19] = 3735927486.000000 
 	}
 }

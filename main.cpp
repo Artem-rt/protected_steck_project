@@ -15,38 +15,34 @@
 // main func.-------------------------------------------------
 int main ()
 {
+// почитать про ## в макросах
     // variables and etc.-------------------------------------
     struct Stack stack_one = {} ;                             // our stack structure
     Error_Codes error_returned = NO_ERROR;                    // error's codes returned from func.
-    TYPE_OF_STACK_ELEM var_one = 10, var_two = 333;           // data pushing to stack_one
+    // TYPE_OF_STACK_ELEM var_one = 10, var_two = 333;           // data pushing to stack_one
     TYPE_OF_STACK_ELEM pop_elem = 0;                          // our element poped from steck
     int stack_length = 5;                                     // length of creating stack
     // -------------------------------------------------------
 
     // working area------------------------------------------
-    if ( ( error_returned = stack_init (&stack_one, stack_length IF_ON_DEBAG(,
-                                                                                "stack_one",
-                                                                                "main()",
-                                                                                __FILE__,
-                                                                                __LINE__)    ) ) != NO_ERROR)
-        decode_the_error_code_enum (&error_returned);
+    if ( ( error_returned = STACK_INIT(&stack_one, stack_length) ) != NO_ERROR)
+        decode_the_error_code_enum (&error_returned, stdout);
 
     for (int i = 0; i < 15; i++)
     {
         if ((error_returned = stack_push (&stack_one, i)) != NO_ERROR)
-        decode_the_error_code_enum (&error_returned);
+        decode_the_error_code_enum (&error_returned, stdout);
 
     }
 
+    stack_one.data[0] = -1;
     for (int i = 0; i < 13; i++)
     {
         if ((error_returned = stack_pop (&stack_one, &pop_elem)) != NO_ERROR)
-        decode_the_error_code_enum (&error_returned);
+        decode_the_error_code_enum (&error_returned, stdout);
     }
 
     printf ("pop_elem = " SPECIFICATOR_TYPE "  capacity = %d  size = %d", pop_elem, stack_one.capacity, stack_one.size);
-
-    stack_printf (&stack_one);
 
     stack_destroy (&stack_one);
 
