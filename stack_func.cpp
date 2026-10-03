@@ -13,6 +13,8 @@
 #include <math.h>                                         // for fabs() for compare doubles
 // -------------------------------------------------------
 
+
+
 // function ----------------------------------------------
 Error_Codes stack_init (struct Stack* stack_i, int stack_length IF_ON_DEBAG(,
                                                                                 const char* name,
@@ -114,7 +116,7 @@ Error_Codes stack_pop (struct Stack* stack_i, TYPE_OF_STACK_ELEM* pop_elem)
     if (stack_i -> capacity == 0)
     {
         error = CAPACITY_ZERO_IN_STACK_POP;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
     }
 
     assert (!error);
@@ -213,35 +215,35 @@ Error_Codes stack_verifier (struct Stack* stack_i)
     if (stack_i == NULL)
     {
         error = NULL_POINTER_STACK_I;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
         return error;
     }
 
     if (stack_i -> data == NULL)
     {
         error = NULL_POINTER_DATA;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
         return error;
     }
 
     if ((stack_i -> capacity) < 0)
     {
         error = CAPACITY_SMALLER_THAN_ZERO;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
         return error;
     }
 
     if ((stack_i -> size) < 0 && (stack_i -> capacity) != 0)
     {
         error = SIZE_SMALLER_THAN_ZERO;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
         return error;
     }
 
     if ((stack_i -> capacity) < (stack_i -> size))
     {
         error = CAPACITY_SMALLER_THAN_SIZE;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
         return error;
     }
 
@@ -249,14 +251,14 @@ Error_Codes stack_verifier (struct Stack* stack_i)
         if (fabs(stack_i -> data [0] - CANARY_ONE) > 0.00001)
         {
             error = CANARY_ONE_WAS_DEAD;
-            stack_dump (stack_i, &error);
+            STACK_DUMP(stack_i, &error);
             return error;
         }
 
         if (fabs (stack_i -> data [stack_i -> capacity - 1] - CANARY_TWO) > 0.00000001 && stack_i -> capacity != 0)
         {
             error = CANARY_TWO_WAS_DEAD;
-            stack_dump (stack_i, &error);
+            STACK_DUMP(stack_i, &error);
             return error;
         }
     )
@@ -264,41 +266,41 @@ Error_Codes stack_verifier (struct Stack* stack_i)
     // ----------------------------------------------------
 }
 
-void stack_dump (struct Stack* stack_i, Error_Codes* error)
+void stack_dump(struct Stack* stack_i, Error_Codes* error, FILE* output_file)
 {
-    // variable--------------------------------------------
-    FILE* error_in_stack_i = NULL;
-    // ----------------------------------------------------
-
-    // working area----------------------------------------
-
-    if ((error_in_stack_i = fopen (ERROR_STACK_FILE, OPEN_FILE_FOR_WRITING)) == NULL)
-    {
-        printf ("You have errors with stack, but " ERROR_STACK_FILE " didn't open. Sorry...");
-        error_in_stack_i = stderr;
-    }
+//     // variable--------------------------------------------
+//     FILE* error_in_stack_i = NULL;
+//     // ----------------------------------------------------
+//
+//     // working area----------------------------------------
+//
+//     if ((error_in_stack_i = fopen (ERROR_STACK_FILE, OPEN_FILE_FOR_WRITING)) == NULL)
+//     {
+//         printf ("You have errors with stack, but " ERROR_STACK_FILE " didn't open. Sorry...");
+//         error_in_stack_i = stderr;
+//     }
 
     if (stack_i == NULL)
     {
-        fprintf (error_in_stack_i, "SORRY, BUT Stack* stack_i == NULL");
+        fprintf (output_file, "SORRY, BUT Stack* stack_i == NULL");
     } else
     {
-        fprintf (error_in_stack_i, "\n\nstruct Stack \"%s\" [0x%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
+        fprintf (output_file, "\n\nstruct Stack \"%s\" [0x%p] created by \"%s\" at \"%s\" : %d\n\n{\n", stack_i -> name, stack_i,
                                                                                                                                       stack_i -> func, stack_i -> file,
                                                                                                                                       stack_i -> line);
 
         if (stack_i -> capacity == 0)
         {
-            fprintf (error_in_stack_i, "\n\nMAYBE PROBLEM IN stack_i.capacity == 0 in stack_pop(--//--)\n\n");
+            fprintf (output_file, "\n\nMAYBE PROBLEM IN stack_i.capacity == 0 in stack_pop(--//--)\n\n");
         }
-        fprintf (error_in_stack_i, "\tcapacity = %d\n", stack_i -> capacity);
-        fprintf (error_in_stack_i, "\tsize = %d\n", stack_i -> size);
-        fprintf (error_in_stack_i, "\tdata [0x%p]\n\t{\n", stack_i -> data);
+        fprintf (output_file, "\tcapacity = %d\n", stack_i -> capacity);
+        fprintf (output_file, "\tsize = %d\n", stack_i -> size);
+        fprintf (output_file, "\tdata [0x%p]\n\t{\n", stack_i -> data);
 
         if (stack_i -> size > 0 && stack_i -> capacity > 0 && stack_i -> size <= stack_i -> capacity && stack_i -> data != NULL)
         {
             IF_ON_CANARY(
-                fprintf (error_in_stack_i, "\t\tCANARY_ONE: data[0] = " SPECIFICATOR_TYPE " \n", stack_i -> data [0]);
+                fprintf (output_file, "\t\tCANARY_ONE: data[0] = " SPECIFICATOR_TYPE " \n", stack_i -> data [0]);
             )
 
             int cnt_print_dump = 0 IF_ON_CANARY(+1);
@@ -306,23 +308,23 @@ void stack_dump (struct Stack* stack_i, Error_Codes* error)
             for (; cnt_print_dump < stack_i -> capacity IF_ON_CANARY(- 1); cnt_print_dump  ++)
             {
                 if (fabs(stack_i -> data [cnt_print_dump ] - 0xDED) < 0.0001)
-                    fprintf (error_in_stack_i, "\t\t[%d] = " SPECIFICATOR_TYPE " (MAYBE POIZEN)\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+                    fprintf (output_file, "\t\t[%d] = " SPECIFICATOR_TYPE " (MAYBE POIZEN)\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
                 else
-                    fprintf (error_in_stack_i, "\t\t*[%d] = " SPECIFICATOR_TYPE "\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
+                    fprintf (output_file, "\t\t*[%d] = " SPECIFICATOR_TYPE "\n", cnt_print_dump , stack_i -> data [cnt_print_dump ]);
             }
 
             IF_ON_CANARY(
-                fprintf (error_in_stack_i, "\t\tCANARY_ONE: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
+                fprintf (output_file, "\t\tCANARY_ONE: data[%d] = " SPECIFICATOR_TYPE " \n", cnt_print_dump, stack_i -> data [cnt_print_dump]);
             )
         }
-        fprintf (error_in_stack_i, "\t}\n");
+        fprintf (output_file, "\t}\n");
 
-        fprintf (error_in_stack_i, "}\n");
+        fprintf (output_file, "}\n");
 
-        decode_the_error_code_enum (error, stdout);
+        decode_the_error_code_enum (error, output_file);
 
     }
-    if (fclose(error_in_stack_i)) printf ("ERROR WITH CLOSING ERROR_FILE");
+    // if (fclose(error_in_stack_i)) printf ("ERROR WITH CLOSING ERROR_FILE");
     // ----------------------------------------------------
 }
 )
@@ -380,7 +382,7 @@ void stack_real_down_capacity (struct Stack* stack_i)
     if (stack_i -> capacity == 0)
     {
         error = CAPACITY_ZERO_IN_STACK_POP;
-        stack_dump (stack_i, &error);
+        STACK_DUMP(stack_i, &error);
     }
 
     assert (!error);

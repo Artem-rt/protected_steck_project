@@ -1,11 +1,11 @@
 
 
-struct Stack "&stack_one" [0x0000009452DFFBC0] created by "" at "main.cpp" : 28
+struct Stack "&stack_one" [0x000000BF269FF960] created by "" at "main.cpp" : 28
 
 {
 	capacity = 20
 	size = 16
-	data [0x0000026DE215BB30]
+	data [0x000002363462BCF0]
 	{
 		CANARY_ONE: data[0] = -1.000000 
 		*[1] = 0.000000
@@ -29,3 +29,4 @@ struct Stack "&stack_one" [0x0000009452DFFBC0] created by "" at "main.cpp" : 28
 		CANARY_ONE: data[19] = 3735927486.000000 
 	}
 }
+CANARY_ONE WAS DEAD (stack_i.data[0] attacked), error code : -6

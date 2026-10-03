@@ -43,7 +43,20 @@
                                                                                 "",\
                                                                                 __FILE__,\
                                                                                 __LINE__) )
-#define STACK_DUMP_FILE(_stack_, _error_, _file_)
+
+
+#define STACK_DUMP_FILE(_stack_, _error_, _file_) stack_dump (_stack_, _error_, _file_)
+
+#define STACK_DUMP_LOG(_stack_, _error_) FILE* error_in_stack_i = NULL;                                                                    \
+                                                 if ((error_in_stack_i = fopen (ERROR_STACK_FILE, OPEN_FILE_FOR_WRITING)) == NULL)          \
+                                                 {                                                                                          \
+                                                     printf ("You have errors with stack, but " ERROR_STACK_FILE " didn't open. Sorry..."); \
+                                                     error_in_stack_i = stderr;                                                             \
+                                                 }                                                                                          \
+                                                 stack_dump (_stack_, _error_, error_in_stack_i);                                           \
+                                                 if (fclose(error_in_stack_i)) printf ("ERROR WITH CLOSING ERROR_FILE");
+#define STACK_DUMP_SELECT(_1, _2, _3, macro, ...) macro
+#define STACK_DUMP(...) STACK_DUMP_SELECT(__VA_ARGS__, STACK_DUMP_FILE, STACK_DUMP_LOG)(__VA_ARGS__)
 // ---------------------------------------------------
 
 // determining the data type in the stack-------------
@@ -102,7 +115,7 @@ void stack_destroy (struct Stack* stack_i);
 
 IF_ON_DEBAG(
 Error_Codes stack_verifier (struct Stack* stack_i);
-void stack_dump (struct Stack* stack_i, Error_Codes* error);
+void stack_dump (struct Stack* stack_i, Error_Codes* error, FILE* output_file);
 )
 
 

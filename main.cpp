@@ -35,12 +35,16 @@ int main ()
 
     }
 
-    stack_one.data[0] = -1;
     for (int i = 0; i < 13; i++)
     {
         if ((error_returned = stack_pop (&stack_one, &pop_elem)) != NO_ERROR)
         decode_the_error_code_enum (&error_returned, stdout);
     }
+
+    FILE* output = NULL;
+    output = fopen ("A.txt", OPEN_FILE_FOR_WRITING);
+    STACK_DUMP(&stack_one, &error_returned, output);
+    fclose(output);
 
     printf ("pop_elem = " SPECIFICATOR_TYPE "  capacity = %d  size = %d", pop_elem, stack_one.capacity, stack_one.size);
 
